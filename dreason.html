@@ -1,0 +1,174 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lil Dreason | DreasonWorld</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #111; color: #eee; margin:0; }
+    header { background: #222; padding: 15px; text-align: center; }
+    h1 { margin: 0; color: #e64b00; }
+    nav a { margin: 0 15px; color: #eee; text-decoration: none; font-weight: bold; }
+    nav a:hover { color: #e64b00; }
+    .container { max-width: 900px; margin: 20px auto; padding: 0 20px; }
+    .login, .music, .uploads { background: #222; padding: 20px; border-radius: 8px; margin-bottom: 25px; }input, button, select, textarea { margin-top: 10px; width: 100%; padding: 10px; border-radius: 5px; border:none; }
+    button { background: #e64b00; color: white; font-weight: bold; cursor: pointer; }
+    button:hover { background: #bf3f00; }
+    .music a { display: inline-block; margin: 10px 10px 0 0; padding: 10px 15px; background: #e64b00; color: white; border-radius: 5px; text-decoration: none; }
+    .uploads img, .uploads video { max-width: 100%; border-radius: 8px; margin-top: 10px; }
+    .post { background: #333; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+    .post button { width: auto; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Welcome to DreasonWorld</h1>
+  <nav>
+    <a href="#login">Login</a>
+    <a href="#music">Latest Music</a>
+    <a href="#uploads">Fan Uploads</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- Login Section -->
+  <section id="login" class="login">
+    <h2>Login / Signup</h2>
+    <input type="text" id="username" placeholder="Enter your username" />
+    <button onclick="loginUser()">Login</button>
+    <p id="welcomeMsg"></p>
+  </section>
+
+  <!-- Latest Music Section -->
+  <section id="music" class="music" style="display:none;">
+    <h2>Latest Music</h2>
+    <p>Select a platform to listen:</p><select id="platformSelect" onchange="showPlatformLink()">
+      <option value="">--Choose a platform--</option>
+      <option value="spotify">Spotify</option>
+      <option value="apple">Apple Music</option>
+      <option value="youtube">YouTube</option>
+      <option value="tiktok">TikTok</option>
+      <option value="instagram">Instagram</option>
+    </select>
+    <div id="platformLink" style="margin-top: 15px;"></div>
+  </section>
+
+  <!-- Fan Uploads Section -->
+  <section id="uploads" class="uploads" style="display:none;">
+    <h2>Fan Uploads</h2>
+    <p>Share your pics or videos of Lil Dreason!</p>
+    <input type="file" id="uploadFile" accept="image/*,video/*" />
+    <button onclick="addPost()">Upload</button>
+    <div id="posts"></div>
+  </section>
+
+</div>
+
+<script>
+  // Simple login logic
+  function loginUser() {
+    const username = document.getElementById('username').value.trim();
+    if(username) {
+      document.getElementById('welcomeMsg').textContent = 'Welcome, ' + username + '!';
+      document.getElementById('music').style.display = 'block';
+      document.getElementById('uploads').style.display = 'block';
+    } else {
+      alert('Please enter a username');
+    }
+  }
+
+  // Platform links
+  const links = {spotify: 'https://open.spotify.com/artist/2mODlP6jRSjHtBm9fDqgon',
+    apple: 'https://music.apple.com/artist/lil-dreason',
+    youtube: 'https://youtube.com/@lil-d5e',
+    tiktok: 'https://www.tiktok.com/@lil_dreason',
+    instagram: 'https://instagram.com/lil_dreason'
+  };
+
+  function showPlatformLink() {
+    const platform = document.getElementById('platformSelect').value;
+    const linkDiv = document.getElementById('platformLink');
+    if(platform && links[platform]) {
+      linkDiv.innerHTML = `<a href="links[platform]" target="_blank">Listen on{platform.charAt(0).toUpperCase() + platform.slice(1)}</a>`;
+    } else {
+      linkDiv.innerHTML = '';
+    }
+  }
+
+  // Fan posts array
+  let posts = [];
+
+  function addPost() {
+    const fileInput = document.getElementById('uploadFile');
+    const file = fileInput.files[0];
+    if(!file) return alert('Please select a file to upload.');
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const newPost = {
+        id: Date.now(),
+        type: file.type.startsWith('video') ? 'video' : 'image',
+        src: e.target.result,
+        likes: 0,
+        comments: []
+      };
+      posts.unshift(newPost);
+      renderPosts();
+      fileInput.value = '';
+    };
+    reader.readAsDataURL(file);
+  }function renderPosts() {
+    const postsDiv = document.getElementById('posts');
+    postsDiv.innerHTML = '';
+    posts.forEach(post => {
+      const postEl = document.createElement('div');
+      postEl.className = 'post';
+
+      const mediaEl = document.createElement(post.type);
+      mediaEl.src = post.src;
+      mediaEl.controls = true;
+      postEl.appendChild(mediaEl);
+
+      // Like button
+      const likeBtn = document.createElement('button');
+      likeBtn.textContent = `Like (${post.likes})`;
+      likeBtn.onclick = () => {
+        post.likes++;
+        renderPosts();
+      };
+      postEl.appendChild(likeBtn);
+
+      // Comments section
+      const commentList = document.createElement('ul');
+      post.comments.forEach(c => {
+        const li = document.createElement('li');
+        li.textContent = c;
+        commentList.appendChild(li);
+      });
+      postEl.appendChild(commentList);
+
+      // Add comment input
+      const commentInput = document.createElement('input');
+      commentInput.placeholder = 'Add a comment...';
+      postEl.appendChild(commentInput);
+
+      const commentBtn = document.createElement('button');
+      commentBtn.textContent = 'Comment';
+      commentBtn.onclick = () => {
+        if(commentInput.value.trim()) {post.comments.push(commentInput.value.trim());
+          commentInput.value = '';
+          renderPosts();
+        }
+      };
+      postEl.appendChild(commentBtn);
+
+      postsDiv.appendChild(postEl);
+    });
+  }
+</script>
+
+</body>
+</html>
