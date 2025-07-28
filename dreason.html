@@ -22,7 +22,143 @@
   </style>
 </head>
 <body>
+<div id="auth-section">
+  <h2>Sign Up / Log In</h2>
+  <input type="email" id="email" placeholder="Email" /><br />
+  <input type="password" id="password" placeholder="Password" /><br />
+  <button id="signup-btn">Sign Up</button>
+  <button id="login-btn">Log In</button>
+  <button id="logout-btn" style="display:none;">Log Out</button>
+  <p id="auth-msg"></p>
+</div>
 
+<div id="comment-section" style="display:none;">
+  <h3>Leave a comment or upload media</h3>
+  <textarea id="comment-text" placeholder="Write your comment..."></textarea><br />
+  <input type="file" id="media-upload" accept="image/*,video/*" /><br />
+  <button id="post-comment-btn">Post</button>
+  <div id="comments-list"></div>
+</div>
+```
+
+---
+
+JavaScript (put after Firebase init script):
+
+```js
+const emailInput = document.getElementById('email');
+const passwordInput = document.getElementById('password');
+const signupBtn = document.getElementById('signup-btn');
+const loginBtn = document.getElementById('login-btn');
+const logoutBtn = document.getElementById('logout-btn');const authMsg = document.getElementById('auth-msg');
+
+const commentSection = document.getElementById('comment-section');
+const commentText = document.getElementById('comment-text');
+const mediaUpload = document.getElementById('media-upload');
+const postCommentBtn = document.getElementById('post-comment-btn');
+const commentsList = document.getElementById('comments-list');
+
+// Auth functions
+signupBtn.onclick = () => {
+  auth.createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
+  .then(() => authMsg.textContent = 'Signed up! You can now log in.')
+  .catch(e => authMsg.textContent = e.message);
+};
+
+loginBtn.onclick = () => {
+  auth.signInWithEmailAndPassword(emailInput.value, passwordInput.value)
+  .catch(e => authMsg.textContent = e.message);
+};
+
+logoutBtn.onclick = () => {
+  auth.signOut();
+};
+
+auth.onAuthStateChanged(user => {
+  if(user) {
+    authMsg.textContent = `Logged in as ${user.email}`;
+    logoutBtn.style.display = 'inline-block';
+    signupBtn.style.display = 'none';
+    loginBtn.style.display = 'none';
+    emailInput.style.display = 'none';
+    passwordInput.style.display = 'none';
+
+    commentSection.style.display = 'block';
+    loadComments();
+  } else {
+    authMsg.textContent = '';
+    logoutBtn.style.display = 'none';signupBtn.style.display = 'inline-block';
+    loginBtn.style.display = 'inline-block';
+    emailInput.style.display = 'inline-block';
+    passwordInput.style.display = 'inline-block';
+
+    commentSection.style.display = 'none';
+  }
+});
+
+// Post comment with optional media
+postCommentBtn.onclick = async () => {
+  if(!commentText.value.trim()) {
+    alert('Please write a comment');
+    return;
+  }
+
+  postCommentBtn.disabled = true;
+
+  let mediaUrl = '';
+  if(mediaUpload.files.length > 0){
+    const file = mediaUpload.files[0];
+    const storageRef = storage.ref('uploads/' + Date.now() + '_' + file.name);
+    await storageRef.put(file);
+    mediaUrl = await storageRef.getDownloadURL();
+  }
+
+  db.collection('comments').add({
+    user: auth.currentUser.email,
+    comment: commentText.value.trim(),
+    mediaUrl: mediaUrl,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  commentText.value = '';
+  mediaUpload.value = '';
+  postCommentBtn.disabled = false;
+  loadComments();
+}
+
+// Load comments from Firestore
+function loadComments(){
+  commentsList.innerHTML = 'Loading comments...';
+  db.collection('comments').orderBy('timestamp', 'desc').limit(20).get()
+  .then(snapshot => {
+    commentsList.innerHTML = '';
+    if(snapshot.empty) {commentsList.textContent = 'No comments yet.';
+      return;
+    
+
+    snapshot.forEach(doc => 
+      const data = doc.data();
+      const div = document.createElement('div');
+      div.style.border = '1px solid #ccc';
+      div.style.margin = '10px 0';
+      div.style.padding = '10px';
+
+      let html = `<b>{data.user}</b><p>data.comment</p>`;
+      if(data.mediaUrl)
+        if(data.mediaUrl.match(/(̇mp4|webm|ogg)/i)){
+          html += `<video src="data.mediaUrl" controls width="250"></video>`;
+         else 
+          html += `<img src="{data.mediaUrl}" width="250" />`;
+        }
+      }
+      div.innerHTML = html;
+      commentsList.appendChild(div);
+    });
+  });
+}
+```
+
+---
 <header>
   <h1>Welcome to DreasonWorld</h1>
   <nav>
